@@ -11,8 +11,11 @@ The *Goscli* package is a cross-platform CLI tool for ScaleIO.  The tool is buil
 
 There are plenty of great features of the CLI, but it is still early stages.  The capabilities are listed below.
 
+For now, reference the [Goair project](https://github.com/emccode/goair) for basics relating to configuration files, environment variables, and Docker containers as they are built using the same Go CLI framework and packages.
+
 
 ## <a id="usage">Usage</a>
+Make sure to preface the commands with ```GOSCALEIO_ENDPOINT=https://ip_or_dns_of_gw/api GOSCALEIO_INSECURE=true goscli``` for now.
 
     goscli login --username=admin --password=Scaleio123
     goscli instance get

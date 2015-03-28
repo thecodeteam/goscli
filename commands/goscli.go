@@ -15,16 +15,20 @@ import (
 )
 
 var (
-	username string
-	password string
-	endpoint string
-	insecure string
-	cfgFile  string
-	systemid string
-	sdcip    string
-	sdcid    string
-	sdcname  string
-	sdcguid  string
+	username             string
+	password             string
+	endpoint             string
+	insecure             string
+	cfgFile              string
+	systemid             string
+	sdcip                string
+	sdcid                string
+	sdcname              string
+	sdcguid              string
+	protectiondomainname string
+	protectiondomainid   string
+	storagepoolname      string
+	storagepoolid        string
 )
 
 //FlagValue struct
@@ -97,6 +101,7 @@ func AddCommands() {
 	GoscliCmd.AddCommand(statisticsCmd)
 	GoscliCmd.AddCommand(systemCmd)
 	GoscliCmd.AddCommand(userCmd)
+	GoscliCmd.AddCommand(storagepoolCmd)
 }
 
 var goscliCmdV *cobra.Command

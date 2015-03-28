@@ -24,6 +24,11 @@ func init() {
 
 	sdcCmdV = sdcCmd
 
+	initConfig(sdcCmd, "goscli", true, map[string]FlagValue{
+		"endpoint": {endpoint, true, false, ""},
+		"insecure": {insecure, false, false, ""},
+	})
+
 	sdcCmd.Run = func(cmd *cobra.Command, args []string) {
 		setGobValues(cmd, "goscli", "")
 		cmd.Usage()

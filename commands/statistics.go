@@ -19,6 +19,11 @@ func init() {
 
 	statisticsCmdV = statisticsCmd
 
+	initConfig(statisticsCmd, "goscli", true, map[string]FlagValue{
+		"endpoint": {endpoint, true, false, ""},
+		"insecure": {insecure, false, false, ""},
+	})
+
 	statisticsCmd.Run = func(cmd *cobra.Command, args []string) {
 		setGobValues(cmd, "goscli", "")
 		cmd.Usage()

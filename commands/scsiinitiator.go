@@ -19,6 +19,11 @@ func init() {
 
 	scsiinitiatorCmdV = scsiinitiatorCmd
 
+	initConfig(scsiinitiatorCmd, "goscli", true, map[string]FlagValue{
+		"endpoint": {endpoint, true, false, ""},
+		"insecure": {insecure, false, false, ""},
+	})
+
 	scsiinitiatorCmd.Run = func(cmd *cobra.Command, args []string) {
 		setGobValues(cmd, "goscli", "")
 		cmd.Usage()

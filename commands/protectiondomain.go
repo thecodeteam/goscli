@@ -19,6 +19,11 @@ func init() {
 
 	protectiondomainCmdV = protectiondomainCmd
 
+	initConfig(protectiondomainCmd, "goscli", true, map[string]FlagValue{
+		"endpoint": {endpoint, true, false, ""},
+		"insecure": {insecure, false, false, ""},
+	})
+
 	protectiondomainCmd.Run = func(cmd *cobra.Command, args []string) {
 		setGobValues(cmd, "goscli", "")
 		cmd.Usage()

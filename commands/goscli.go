@@ -71,6 +71,7 @@ var loginCmd = &cobra.Command{
 			VarMap: map[string]string{
 				"token":    client.Token,
 				"endpoint": client.SIOEndpoint.String(),
+				"insecure": viper.GetString("insecure"),
 			},
 		})
 

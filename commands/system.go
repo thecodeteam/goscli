@@ -20,6 +20,11 @@ func init() {
 
 	systemCmdV = systemCmd
 
+	initConfig(systemCmd, "goscli", true, map[string]FlagValue{
+		"endpoint": {endpoint, true, false, ""},
+		"insecure": {insecure, false, false, ""},
+	})
+
 	systemCmd.Run = func(cmd *cobra.Command, args []string) {
 		setGobValues(cmd, "goscli", "")
 		cmd.Usage()

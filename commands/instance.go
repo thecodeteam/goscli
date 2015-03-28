@@ -19,6 +19,11 @@ func init() {
 
 	instanceCmdV = instanceCmd
 
+	initConfig(instanceCmd, "goscli", true, map[string]FlagValue{
+		"endpoint": {endpoint, true, false, ""},
+		"insecure": {insecure, false, false, ""},
+	})
+
 	instanceCmd.Run = func(cmd *cobra.Command, args []string) {
 		setGobValues(cmd, "goscli", "")
 		cmd.Usage()
@@ -46,14 +51,15 @@ var instancegetCmd = &cobra.Command{
 }
 
 func cmdGetInstance(cmd *cobra.Command, args []string) {
-	client, err := goscaleio.NewClient()
-	if err != nil {
-		log.Fatalf("error with NewClient: %s", err)
-	}
 
 	getValue := clue.GetValue{}
 	if err := clue.DecodeGobFile("goscli", &getValue); err != nil {
 		log.Fatalf("Problem with client DecodeGobFile: %v", err)
+	}
+
+	client, err := goscaleio.NewClient()
+	if err != nil {
+		log.Fatalf("error with NewClient: %s", err)
 	}
 
 	client.Token = *getValue.VarMap["token"]

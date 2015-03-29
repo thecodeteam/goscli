@@ -24,10 +24,10 @@ func init() {
 
 	sdcCmdV = sdcCmd
 
-	initConfig(sdcCmd, "goscli", true, map[string]FlagValue{
-		"endpoint": {endpoint, true, false, ""},
-		"insecure": {insecure, false, false, ""},
-	})
+	// initConfig(sdcCmd, "goscli", true, map[string]FlagValue{
+	// 	"endpoint": {endpoint, true, false, ""},
+	// 	"insecure": {insecure, false, false, ""},
+	// })
 
 	sdcCmd.Run = func(cmd *cobra.Command, args []string) {
 		setGobValues(cmd, "goscli", "")
@@ -61,13 +61,13 @@ func cmdGetSdc(cmd *cobra.Command, args []string) {
 		log.Fatalf("error authenticating: %v", err)
 	}
 
-	initConfig(cmd, "goscli_system", true, map[string]FlagValue{
-		"systemid": {systemid, true, false, ""},
+	initConfig(cmd, "goscli", true, map[string]FlagValue{
+		"systemid": {&systemid, true, false, ""},
 	})
 
 	systemid = viper.GetString("systemid")
 
-	system, err := client.FindSystem(systemid)
+	system, err := client.FindSystem(systemid, "")
 	if err != nil {
 		log.Fatalf("err: problem getting system %v", err)
 	}

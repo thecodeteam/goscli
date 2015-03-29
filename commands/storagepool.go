@@ -22,10 +22,10 @@ func init() {
 
 	storagepoolCmdV = storagepoolCmd
 
-	initConfig(storagepoolCmd, "goscli", true, map[string]FlagValue{
-		"endpoint": {endpoint, true, false, ""},
-		"insecure": {insecure, false, false, ""},
-	})
+	// initConfig(storagepoolCmd, "goscli", true, map[string]FlagValue{
+	// 	"endpoint": {endpoint, true, false, ""},
+	// 	"insecure": {insecure, false, false, ""},
+	// })
 
 	storagepoolCmd.Run = func(cmd *cobra.Command, args []string) {
 		setGobValues(cmd, "goscli", "")
@@ -67,17 +67,17 @@ func cmdGetStoragePool(cmd *cobra.Command, args []string) {
 		log.Fatalf("error authenticating: %v", err)
 	}
 
-	initConfig(cmd, "goscli_system", true, map[string]FlagValue{
-		"systemid": {systemid, true, false, ""},
+	initConfig(cmd, "goscli", true, map[string]FlagValue{
+		"systemid": {&systemid, true, false, ""},
 	})
 
-	initConfig(cmd, "goscli_protectiondomain", true, map[string]FlagValue{
-		"protectiondomainid": {protectiondomainid, true, false, ""},
+	initConfig(cmd, "goscli_system", true, map[string]FlagValue{
+		"protectiondomainid": {&protectiondomainid, true, false, ""},
 	})
 
 	systemid = viper.GetString("systemid")
 
-	system, err := client.FindSystem(systemid)
+	system, err := client.FindSystem(systemid, "")
 	if err != nil {
 		log.Fatalf("err: problem getting system %v", err)
 	}

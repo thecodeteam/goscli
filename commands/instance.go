@@ -19,10 +19,10 @@ func init() {
 
 	instanceCmdV = instanceCmd
 
-	initConfig(instanceCmd, "goscli", true, map[string]FlagValue{
-		"endpoint": {endpoint, true, false, ""},
-		"insecure": {insecure, false, false, ""},
-	})
+	// initConfig(instanceCmd, "goscli", true, map[string]FlagValue{
+	// 	"endpoint": {endpoint, true, false, ""},
+	// 	"insecure": {insecure, false, false, ""},
+	// })
 
 	instanceCmd.Run = func(cmd *cobra.Command, args []string) {
 		setGobValues(cmd, "goscli", "")
@@ -66,7 +66,7 @@ func cmdGetInstance(cmd *cobra.Command, args []string) {
 
 	if len(args) == 0 {
 		if systemid == "" {
-			systems, err := client.GetInstance()
+			systems, err := client.GetInstance("")
 			if err != nil {
 				log.Fatalf("err: problem getting instance %v", err)
 			}
@@ -80,7 +80,7 @@ func cmdGetInstance(cmd *cobra.Command, args []string) {
 
 		}
 
-		system, err := client.FindSystem(systemid)
+		system, err := client.FindSystem(systemid, "")
 		if err != nil {
 			log.Fatalf("err: problem getting instance %v", err)
 		}
@@ -102,7 +102,7 @@ func cmdGetInstance(cmd *cobra.Command, args []string) {
 		log.Fatalf("too many arguments specified")
 	}
 
-	system, err := client.FindSystem(systemid)
+	system, err := client.FindSystem(systemid, "")
 	if err != nil {
 		log.Fatalf("err: problem getting instance %v", err)
 	}

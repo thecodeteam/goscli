@@ -21,6 +21,7 @@ var (
 	insecure             string
 	cfgFile              string
 	systemid             string
+	systemhref           string
 	sdcip                string
 	sdcid                string
 	sdcname              string
@@ -33,7 +34,7 @@ var (
 
 //FlagValue struct
 type FlagValue struct {
-	value      string
+	value      *string
 	mandatory  bool
 	persistent bool
 	overrideby string
@@ -112,6 +113,11 @@ func init() {
 	loginCmd.Flags().StringVar(&password, "password", "", "GOSCALEIO_PASSWORD")
 	loginCmd.Flags().StringVar(&endpoint, "endpoint", "", "GOSCALEIO_ENDPOINT")
 	goscliCmdV = GoscliCmd
+
+	initConfig(systemCmd, "goscli", true, map[string]FlagValue{
+		"endpoint": {&endpoint, true, false, ""},
+		"insecure": {&insecure, false, false, ""},
+	})
 }
 
 func initConfig(cmd *cobra.Command, suffix string, checkValues bool, flags map[string]FlagValue) {
@@ -120,10 +126,10 @@ func initConfig(cmd *cobra.Command, suffix string, checkValues bool, flags map[s
 	defaultFlags := map[string]FlagValue{}
 	if len(flags) == 0 {
 		defaultFlags = map[string]FlagValue{
-			"username": {username, true, false, ""},
-			"password": {password, true, false, ""},
-			"endpoint": {endpoint, true, false, ""},
-			"insecure": {insecure, false, false, ""},
+			"username": {&username, true, false, ""},
+			"password": {&password, true, false, ""},
+			"endpoint": {&endpoint, true, false, ""},
+			"insecure": {&insecure, false, false, ""},
 		}
 	}
 
@@ -205,10 +211,10 @@ func initConfig(cmd *cobra.Command, suffix string, checkValues bool, flags map[s
 		}
 
 		statusFlags = append(statusFlags, *statusFlag)
-	}
 
-	if err := setGobValues(cmd, suffix, ""); err != nil {
-		log.Fatal(err)
+		if err := setGobValues(cmd, suffix, key); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	for i := range statusFlags {
@@ -287,6 +293,7 @@ func initConfig(cmd *cobra.Command, suffix string, checkValues bool, flags map[s
 		}
 		//fmt.Println(viper.GetString(key))
 	}
+
 }
 
 //InitConfig function

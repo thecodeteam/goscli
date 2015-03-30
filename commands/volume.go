@@ -30,6 +30,10 @@ func init() {
 	volumemapsdcCmd.Flags().StringVar(&sdcid, "sdcid", "", "GOSCALEIO_SDCID")
 	volumemapsdcCmd.Flags().StringVar(&allowmultiplemappings, "allowmultiplemappings", "", "GOSCALEIO_ALLOWMULTIPLEMAPPINGS")
 	volumemapsdcCmd.Flags().StringVar(&allsdcs, "allsdcs", "", "GOSCALEIO_ALLSDCS")
+	volumeunmapsdcCmd.Flags().StringVar(&volumeid, "volumeid", "", "GOSCALEIO_VOLUMEID")
+	volumeunmapsdcCmd.Flags().StringVar(&sdcid, "sdcid", "", "GOSCALEIO_SDCID")
+	volumeunmapsdcCmd.Flags().StringVar(&ignorescsiinitiators, "ignoreScsiInitiators", "", "GOSCALEIO_IGNORESCSIINITIATORS")
+	volumeunmapsdcCmd.Flags().StringVar(&allsdcs, "allsdcs", "", "GOSCALEIO_ALLSDCS")
 
 	volumeCmdV = volumeCmd
 
@@ -45,6 +49,7 @@ func addCommandsVolume() {
 	volumeCmd.AddCommand(volumelocalCmd)
 	volumeCmd.AddCommand(volumecreateCmd)
 	volumeCmd.AddCommand(volumemapsdcCmd)
+	volumeCmd.AddCommand(volumeunmapsdcCmd)
 }
 
 var volumeCmd = &cobra.Command{
@@ -89,6 +94,13 @@ var volumemapsdcCmd = &cobra.Command{
 	Short: "Map volume",
 	Long:  `Map volume`,
 	Run:   cmdMapVolumeSdc,
+}
+
+var volumeunmapsdcCmd = &cobra.Command{
+	Use:   "unmap",
+	Short: "Unmap volume",
+	Long:  `Unmap volume`,
+	Run:   cmdUnmapVolumeSdc,
 }
 
 func cmdGetVolume(cmd *cobra.Command, args []string) {
@@ -219,9 +231,46 @@ func cmdMapVolumeSdc(cmd *cobra.Command, args []string) {
 
 	err = volume.MapVolumeSdc(mapVolumeSdcParam)
 	if err != nil {
-		log.Fatalf("err: problem creating volume: %s", err)
+		log.Fatalf("err: problem mapping volume: %s", err)
 	}
 
 	fmt.Println(fmt.Sprintf("Successfuly mapped volume %s to %s", volume.Volume.ID, sdcid))
+
+}
+
+func cmdUnmapVolumeSdc(cmd *cobra.Command, args []string) {
+	client, err := authenticate()
+	if err != nil {
+		log.Fatalf("error authenticating: %v", err)
+	}
+
+	initConfig(cmd, "goscli_system", true, map[string]FlagValue{
+		"volumeid":             {&volumeid, true, false, ""},
+		"sdcid":                {&sdcid, true, false, ""},
+		"ignoreScsiInitiators": {&ignorescsiinitiators, false, false, ""},
+		"allsdcs":              {&allsdcs, false, false, ""},
+	})
+
+	storagePool := goscaleio.NewStoragePool(client)
+	targetVolumes, err := storagePool.GetVolume("", volumeid)
+	if err != nil {
+		log.Fatalf("error getting volume: %s", err)
+	}
+
+	volume := goscaleio.NewVolume(client)
+	volume.Volume = targetVolumes[0]
+
+	unmapVolumeSdcParam := &types.UnmapVolumeSdcParam{
+		SdcID:                sdcid,
+		IgnoreScsiInitiators: ignorescsiinitiators,
+		AllSdcs:              allsdcs,
+	}
+
+	err = volume.UnmapVolumeSdc(unmapVolumeSdcParam)
+	if err != nil {
+		log.Fatalf("err: problem unmapping volume: %s", err)
+	}
+
+	fmt.Println(fmt.Sprintf("Successfuly unmapped volume %s to %s", volume.Volume.ID, sdcid))
 
 }

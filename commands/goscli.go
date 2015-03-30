@@ -40,6 +40,7 @@ var (
 	volumesizeinkb        string
 	allowmultiplemappings string
 	allsdcs               string
+	ignorescsiinitiators  string
 )
 
 //FlagValue struct

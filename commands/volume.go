@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/emccode/goscaleio"
+	types "github.com/emccode/goscaleio/types/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v1"
@@ -17,8 +18,14 @@ func init() {
 	// volumeCmd.Flags().StringVar(&volumename, "volumename", "", "GOSCALEIO_TEMP")
 	volumeCmd.Flags().StringVar(&systemid, "systemid", "", "GOSCALEIO_SYSTEMID")
 	volumegetCmd.Flags().StringVar(&systemid, "systemid", "", "GOSCALEIO_SYSTEMID")
+	volumegetCmd.Flags().StringVar(&volumeid, "volumeid", "", "GOSCALEIO_VOLUMEID")
 	volumeuseCmd.Flags().StringVar(&volumename, "volumename", "", "GOSCALEIO_VOLUMENAME")
 	volumeuseCmd.Flags().StringVar(&volumeid, "volumeid", "", "GOSCALEIO_VOLUMEID")
+	volumecreateCmd.Flags().StringVar(&volumename, "volumename", "", "GOSCALEIO_VOLUMENAME")
+	volumecreateCmd.Flags().StringVar(&volumeid, "volumeid", "", "GOSCALEIO_VOLUMEID")
+	volumecreateCmd.Flags().StringVar(&volumeusermcache, "volumeusermcache", "", "GOSCALEIO_VOLUMEUSERMCACHE")
+	volumecreateCmd.Flags().StringVar(&volumetype, "volumetype", "", "GOSCALEIO_VOLUMETYPE")
+	volumecreateCmd.Flags().StringVar(&volumesizeinkb, "volumesizeinkb", "", "GOSCALEIO_VOLUMESIZEINKB")
 
 	volumeCmdV = volumeCmd
 
@@ -32,6 +39,7 @@ func addCommandsVolume() {
 	volumeCmd.AddCommand(volumegetCmd)
 	volumeCmd.AddCommand(volumeuseCmd)
 	volumeCmd.AddCommand(volumelocalCmd)
+	volumeCmd.AddCommand(volumecreateCmd)
 }
 
 var volumeCmd = &cobra.Command{
@@ -64,6 +72,13 @@ var volumelocalCmd = &cobra.Command{
 	Run:   cmdGetVolumeLocal,
 }
 
+var volumecreateCmd = &cobra.Command{
+	Use:   "create",
+	Short: "Create volume",
+	Long:  `Create volume`,
+	Run:   cmdCreateVolume,
+}
+
 func cmdGetVolume(cmd *cobra.Command, args []string) {
 	client, err := authenticate()
 	if err != nil {
@@ -85,7 +100,13 @@ func cmdGetVolume(cmd *cobra.Command, args []string) {
 	storagePool := goscaleio.NewStoragePool(client)
 	storagePool.StoragePool = targetStoragePool
 
-	volumes, err := storagePool.GetVolume("")
+	initConfig(cmd, "goscli_system", true, map[string]FlagValue{
+		"volumeid": {&volumeid, false, false, ""},
+	})
+
+	fmt.Println(volumeid)
+
+	volumes, err := storagePool.GetVolume("", volumeid)
 	if err != nil {
 		log.Fatalf("error getting volumes: %v", err)
 	}
@@ -112,5 +133,48 @@ func cmdGetVolumeLocal(cmd *cobra.Command, args []string) {
 		log.Fatalf("error marshaling: %s", err)
 	}
 	fmt.Println(string(yamlOutput))
+}
+
+func cmdCreateVolume(cmd *cobra.Command, args []string) {
+	client, err := authenticate()
+	if err != nil {
+		log.Fatalf("error authenticating: %v", err)
+	}
+
+	initConfig(cmd, "goscli_system", true, map[string]FlagValue{
+		"storagepoolhref": {&storagepoolhref, true, false, ""},
+	})
+
+	storagepoolhref = viper.GetString("storagepoolhref")
+
+	protectionDomain := goscaleio.NewProtectionDomain(client)
+	targetStoragePool, err := protectionDomain.FindStoragePool("", "", storagepoolhref)
+	if err != nil {
+		log.Fatalf("err: problem getting system %v", err)
+	}
+
+	storagePool := goscaleio.NewStoragePool(client)
+	storagePool.StoragePool = targetStoragePool
+
+	initConfig(cmd, "goscli_system", true, map[string]FlagValue{
+		"volumename":       {&volumename, true, false, ""},
+		"volumesizeinkb":   {&volumesizeinkb, true, false, ""},
+		"volumetype":       {&volumetype, false, false, ""},
+		"volumeusermcache": {&volumeusermcache, false, false, ""},
+	})
+
+	volume := &types.VolumeParam{
+		Name:           volumename,
+		VolumeSizeInKb: volumesizeinkb,
+		VolumeType:     volumetype,
+		UseRmCache:     volumeusermcache,
+	}
+
+	volumeResp, err := storagePool.CreateVolume(volume)
+	if err != nil {
+		log.Fatalf("err: problem creating volume: %s", err)
+	}
+
+	fmt.Println("Successfuly created volume with ID of", volumeResp.ID)
 
 }

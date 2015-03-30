@@ -35,6 +35,9 @@ var (
 	volumeid             string
 	volumename           string
 	volumhref            string
+	volumetype           string
+	volumeusermcache     string
+	volumesizeinkb       string
 )
 
 //FlagValue struct

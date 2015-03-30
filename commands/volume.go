@@ -31,6 +31,7 @@ func init() {
 func addCommandsVolume() {
 	volumeCmd.AddCommand(volumegetCmd)
 	volumeCmd.AddCommand(volumeuseCmd)
+	volumeCmd.AddCommand(volumelocalCmd)
 }
 
 var volumeCmd = &cobra.Command{
@@ -54,6 +55,13 @@ var volumeuseCmd = &cobra.Command{
 	Short: "Use a volume",
 	Long:  `Use a volume`,
 	Run:   cmdUseVolume,
+}
+
+var volumelocalCmd = &cobra.Command{
+	Use:   "local",
+	Short: "Get local volumes",
+	Long:  `Get local volumes`,
+	Run:   cmdGetVolumeLocal,
 }
 
 func cmdGetVolume(cmd *cobra.Command, args []string) {
@@ -91,5 +99,18 @@ func cmdGetVolume(cmd *cobra.Command, args []string) {
 }
 
 func cmdUseVolume(cmd *cobra.Command, args []string) {
+}
+
+func cmdGetVolumeLocal(cmd *cobra.Command, args []string) {
+	volumeMaps, err := goscaleio.GetLocalVolumeMap()
+	if err != nil {
+		log.Fatalf("Error getting local volume maps: %s", err)
+	}
+
+	yamlOutput, err := yaml.Marshal(&volumeMaps)
+	if err != nil {
+		log.Fatalf("error marshaling: %s", err)
+	}
+	fmt.Println(string(yamlOutput))
 
 }

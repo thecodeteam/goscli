@@ -121,9 +121,10 @@ func init() {
 	goscliCmdV = GoscliCmd
 
 	initConfig(systemCmd, "goscli", true, map[string]FlagValue{
-		"endpoint": {&endpoint, true, false, ""},
+		"endpoint": {&endpoint, false, false, ""},
 		"insecure": {&insecure, false, false, ""},
 	})
+
 }
 
 func initConfig(cmd *cobra.Command, suffix string, checkValues bool, flags map[string]FlagValue) {

@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/emccode/goscaleio"
 	"github.com/spf13/cobra"
@@ -37,6 +38,7 @@ func init() {
 
 func addCommandsSdc() {
 	sdcCmd.AddCommand(sdcgetCmd)
+	sdcCmd.AddCommand(sdclocalgetCmd)
 }
 
 var sdcCmd = &cobra.Command{
@@ -53,6 +55,13 @@ var sdcgetCmd = &cobra.Command{
 	Short: "Get a sdc",
 	Long:  `Get a sdc`,
 	Run:   cmdGetSdc,
+}
+
+var sdclocalgetCmd = &cobra.Command{
+	Use:   "local",
+	Short: "Get local sdc",
+	Long:  `Get local sdc`,
+	Run:   cmdGetSdcLocal,
 }
 
 func cmdGetSdc(cmd *cobra.Command, args []string) {
@@ -122,4 +131,39 @@ func cmdGetSdc(cmd *cobra.Command, args []string) {
 
 	}
 
+}
+
+func cmdGetSdcLocal(cmd *cobra.Command, args []string) {
+
+	client, err := authenticate()
+	if err != nil {
+		log.Fatalf("error authenticating: %v", err)
+	}
+
+	initConfig(cmd, "goscli", true, map[string]FlagValue{
+		"systemhref": {&systemhref, true, false, ""},
+	})
+
+	systemhref = viper.GetString("systemhref")
+
+	system, err := client.FindSystem("", systemhref)
+	if err != nil {
+		log.Fatalf("err: problem getting system: %v", err)
+	}
+
+	sdcguid, err := goscaleio.GetSdcLocalGUID()
+	if err != nil {
+		log.Fatalf("Error getting local sdc guid: %s", err)
+	}
+
+	sdc, err := system.FindSdc("SdcGuid", strings.ToUpper(sdcguid))
+	if err != nil {
+		log.Fatalf("Error finding Sdc %s: %s", sdcguid, err)
+	}
+
+	yamlOutput, err := yaml.Marshal(&sdc)
+	if err != nil {
+		log.Fatalf("error marshaling: %s", err)
+	}
+	fmt.Println(string(yamlOutput))
 }

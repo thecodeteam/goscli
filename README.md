@@ -27,6 +27,7 @@ Make sure to preface the commands with ```GOSCALEIO_ENDPOINT=https://ip_or_dns_o
     goscli scsiinitiaor get
     goscli sdc get
     goscli sdc get --sdcguid=60424D25-BA83-4324-8E6D-3CED74FB2A30
+    goscli sdc local
     goscli protectiondomain use --protectiondomainid=dbe9a4b700000000
     goscli storagepool get
     goscli storagepool use --storagepoolid=aab7ee0800000001

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/emccode/clue"
 	"github.com/emccode/goscaleio"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -17,15 +18,10 @@ func init() {
 	// storagepoolCmd.Flags().StringVar(&storagepoolname, "storagepoolname", "", "GOSCALEIO_TEMP")
 	storagepoolCmd.Flags().StringVar(&systemid, "systemid", "", "GOSCALEIO_SYSTEMID")
 	storagepoolgetCmd.Flags().StringVar(&systemid, "systemid", "", "GOSCALEIO_SYSTEMID")
-	storagepooluseCmd.Flags().StringVar(&storagepoolname, "storagepoolname", "", "GOSCALEIO_STORAGEPOOLDOMAINNAME")
-	storagepooluseCmd.Flags().StringVar(&storagepoolid, "storagepoolid", "", "GOSCALEIO_STORAGEPOOLDOMAINID")
+	storagepooluseCmd.Flags().StringVar(&storagepoolname, "storagepoolname", "", "GOSCALEIO_STORAGEPOOLNAME")
+	storagepooluseCmd.Flags().StringVar(&storagepoolid, "storagepoolid", "", "GOSCALEIO_STORAGEPOOLID")
 
 	storagepoolCmdV = storagepoolCmd
-
-	// initConfig(storagepoolCmd, "goscli", true, map[string]FlagValue{
-	// 	"endpoint": {endpoint, true, false, ""},
-	// 	"insecure": {insecure, false, false, ""},
-	// })
 
 	storagepoolCmd.Run = func(cmd *cobra.Command, args []string) {
 		setGobValues(cmd, "goscli", "")
@@ -67,23 +63,13 @@ func cmdGetStoragePool(cmd *cobra.Command, args []string) {
 		log.Fatalf("error authenticating: %v", err)
 	}
 
-	initConfig(cmd, "goscli", true, map[string]FlagValue{
-		"systemhref": {&systemhref, true, false, ""},
-	})
-
-	systemhref = viper.GetString("systemhref")
-
-	system, err := client.FindSystem("", systemhref)
-	if err != nil {
-		log.Fatalf("err: problem getting system: %v", err)
-	}
-
 	initConfig(cmd, "goscli_system", true, map[string]FlagValue{
 		"protectiondomainhref": {&protectiondomainhref, true, false, ""},
 	})
 
 	protectiondomainhref = viper.GetString("protectiondomainhref")
 
+	system := goscaleio.NewSystem(client)
 	targetProtectionDomain, err := system.FindProtectionDomain("", "", protectiondomainhref)
 	if err != nil {
 		log.Fatalf("err: problem getting system %v", err)
@@ -92,7 +78,7 @@ func cmdGetStoragePool(cmd *cobra.Command, args []string) {
 	protectionDomain := goscaleio.NewProtectionDomain(client)
 	protectionDomain.ProtectionDomain = targetProtectionDomain
 
-	storagePools, err := protectionDomain.GetStoragePool()
+	storagePools, err := protectionDomain.GetStoragePool("")
 	if err != nil {
 		log.Fatalf("error getting protection domains: %v", err)
 	}
@@ -106,40 +92,55 @@ func cmdGetStoragePool(cmd *cobra.Command, args []string) {
 }
 
 func cmdUseStoragePool(cmd *cobra.Command, args []string) {
-	// client, err := authenticate()
-	// if err != nil {
-	// 	log.Fatalf("error authenticating: %v", err)
-	// }
-	//
-	// initConfig(cmd, "goscli_system", true, map[string]FlagValue{
-	// 	"systemid": {systemid, true, false, ""},
-	// })
-	//
-	// systemid = viper.GetString("systemid")
-	//
-	// system, err := client.FindSystem(systemid)
-	// if err != nil {
-	// 	log.Fatalf("err: problem getting system: %v", err)
-	// }
-	//
-	// storagePool, err := system.FindStoragePool(storagepoolid, storagepoolname)
-	// if err != nil {
-	// 	log.Fatalf("error getting protection domain: %s", err)
-	// }
-	//
-	// err = clue.EncodeGobFile("goscli_storagepool", clue.UseValue{
-	// 	VarMap: map[string]string{
-	// 		"storagepoolid": storagePool.ID,
-	// 	},
-	// })
-	// if err != nil {
-	// 	log.Fatalf("error encoding gob file %v", err)
-	// }
-	//
-	// yamlOutput, err := yaml.Marshal(&storagePool)
-	// if err != nil {
-	// 	log.Fatalf("error marshaling: %s", err)
-	// }
-	// fmt.Println(string(yamlOutput))
+	client, err := authenticate()
+	if err != nil {
+		log.Fatalf("error authenticating: %v", err)
+	}
+
+	initConfig(cmd, "goscli_system", true, map[string]FlagValue{
+		"protectiondomainhref": {&protectiondomainhref, true, false, ""},
+	})
+
+	protectiondomainhref = viper.GetString("protectiondomainhref")
+
+	system := goscaleio.NewSystem(client)
+	targetProtectionDomain, err := system.FindProtectionDomain("", "", protectiondomainhref)
+	if err != nil {
+		log.Fatalf("error getting protection domain: %s", err)
+	}
+
+	protectionDomain := goscaleio.NewProtectionDomain(client)
+	protectionDomain.ProtectionDomain = targetProtectionDomain
+	storagePool, err := protectionDomain.FindStoragePool(storagepoolid, storagepoolname, "")
+	if err != nil {
+		log.Fatalf("error getting storage pool: %s", err)
+	}
+
+	link, err := goscaleio.GetLink(storagePool.Links, "self")
+	if err != nil {
+		log.Fatalf("Err: problem getting self link")
+	}
+
+	storagepoolhref = link.HREF
+
+	err = clue.EncodeGobFile("goscli_system", clue.UseValue{
+		VarMap: map[string]string{
+			"protectiondomainid":   protectionDomain.ProtectionDomain.ID,
+			"protectiondomainhref": protectiondomainhref,
+			"protectiondomainname": protectionDomain.ProtectionDomain.Name,
+			"storagepoolid":        storagePool.ID,
+			"storagepoolhref":      storagepoolhref,
+			"storagepoolname":      storagePool.Name,
+		},
+	})
+	if err != nil {
+		log.Fatalf("error encoding gob file %v", err)
+	}
+
+	yamlOutput, err := yaml.Marshal(&storagePool)
+	if err != nil {
+		log.Fatalf("error marshaling: %s", err)
+	}
+	fmt.Println(string(yamlOutput))
 
 }

@@ -31,6 +31,10 @@ var (
 	protectiondomainhref string
 	storagepoolname      string
 	storagepoolid        string
+	storagepoolhref      string
+	volumeid             string
+	volumename           string
+	volumhref            string
 )
 
 //FlagValue struct
@@ -104,6 +108,7 @@ func AddCommands() {
 	GoscliCmd.AddCommand(systemCmd)
 	GoscliCmd.AddCommand(userCmd)
 	GoscliCmd.AddCommand(storagepoolCmd)
+	GoscliCmd.AddCommand(volumeCmd)
 }
 
 var goscliCmdV *cobra.Command

@@ -62,14 +62,14 @@ func cmdGetSdc(cmd *cobra.Command, args []string) {
 	}
 
 	initConfig(cmd, "goscli", true, map[string]FlagValue{
-		"systemid": {&systemid, true, false, ""},
+		"systemhref": {&systemhref, true, false, ""},
 	})
 
-	systemid = viper.GetString("systemid")
+	systemhref = viper.GetString("systemhref")
 
-	system, err := client.FindSystem(systemid, "")
+	system, err := client.FindSystem("", systemhref)
 	if err != nil {
-		log.Fatalf("err: problem getting system %v", err)
+		log.Fatalf("err: problem getting system: %v", err)
 	}
 
 	if sdcip == "" && sdcid == "" && sdcname == "" && sdcguid == "" {

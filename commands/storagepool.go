@@ -79,12 +79,12 @@ func cmdGetStoragePool(cmd *cobra.Command, args []string) {
 	}
 
 	initConfig(cmd, "goscli_system", true, map[string]FlagValue{
-		"protectiondomainid": {&protectiondomainid, true, false, ""},
+		"protectiondomainhref": {&protectiondomainhref, true, false, ""},
 	})
 
-	protectiondomainid = viper.GetString("protectiondomainid")
+	protectiondomainhref = viper.GetString("protectiondomainhref")
 
-	targetProtectionDomain, err := system.FindProtectionDomain(protectiondomainid, "")
+	targetProtectionDomain, err := system.FindProtectionDomain("", "", protectiondomainhref)
 	if err != nil {
 		log.Fatalf("err: problem getting system %v", err)
 	}

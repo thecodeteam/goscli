@@ -79,7 +79,7 @@ func cmdGetProtectionDomain(cmd *cobra.Command, args []string) {
 		log.Fatalf("err: problem getting system: %v", err)
 	}
 
-	protectiondomains, err := system.GetProtectionDomain()
+	protectiondomains, err := system.GetProtectionDomain("")
 	if err != nil {
 		log.Fatalf("error getting protection domains: %v", err)
 	}
@@ -109,7 +109,7 @@ func cmdUseProtectionDomain(cmd *cobra.Command, args []string) {
 		log.Fatalf("err: problem getting system: %v", err)
 	}
 
-	protectionDomain, err := system.FindProtectionDomain(protectiondomainid, protectiondomainname)
+	protectionDomain, err := system.FindProtectionDomain(protectiondomainid, protectiondomainname, "")
 	if err != nil {
 		log.Fatalf("error getting protection domain: %s", err)
 	}

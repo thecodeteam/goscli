@@ -115,7 +115,7 @@ func cmdGetSystem(cmd *cobra.Command, args []string) {
 
 		yamlOutput, err = yaml.Marshal(&scsiInitiators)
 	case "protectiondomain":
-		protectionDomains, err := system.GetProtectionDomain()
+		protectionDomains, err := system.GetProtectionDomain("")
 		if err != nil {
 			log.Fatalf("error getting protectiondomains: %v", err)
 		}

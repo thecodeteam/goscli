@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/emccode/clue"
+	"github.com/emccode/goscaleio"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v1"
@@ -113,9 +114,18 @@ func cmdUseProtectionDomain(cmd *cobra.Command, args []string) {
 		log.Fatalf("error getting protection domain: %s", err)
 	}
 
+	link, err := goscaleio.GetLink(protectionDomain.Links, "self")
+	if err != nil {
+		log.Fatalf("Err: problem getting self link")
+	}
+
+	protectiondomainhref = link.HREF
+
 	err = clue.EncodeGobFile("goscli_system", clue.UseValue{
 		VarMap: map[string]string{
-			"protectiondomainid": protectionDomain.ID,
+			"protectiondomainid":   protectionDomain.ID,
+			"protectiondomainhref": protectiondomainhref,
+			"protectiondomainname": protectionDomain.Name,
 		},
 	})
 	if err != nil {

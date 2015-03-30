@@ -28,6 +28,7 @@ var (
 	sdcguid              string
 	protectiondomainname string
 	protectiondomainid   string
+	protectiondomainhref string
 	storagepoolname      string
 	storagepoolid        string
 )

@@ -33,6 +33,8 @@ Make sure to preface the commands with ```GOSCALEIO_ENDPOINT=https://ip_or_dns_o
     goscli storagepool use --storagepoolid=aab7ee0800000001
     goscli volume get
     goscli volume local
+    goscli volume create --volumename=testing4 --volumesizeinkb=4096
+    goscli volume map --sdcid=988a23eb00000002 --volumeid=d2a3950700000007
 
 
 <a id="licensing">Licensing</a>

@@ -26,6 +26,10 @@ func init() {
 	volumecreateCmd.Flags().StringVar(&volumeusermcache, "volumeusermcache", "", "GOSCALEIO_VOLUMEUSERMCACHE")
 	volumecreateCmd.Flags().StringVar(&volumetype, "volumetype", "", "GOSCALEIO_VOLUMETYPE")
 	volumecreateCmd.Flags().StringVar(&volumesizeinkb, "volumesizeinkb", "", "GOSCALEIO_VOLUMESIZEINKB")
+	volumemapsdcCmd.Flags().StringVar(&volumeid, "volumeid", "", "GOSCALEIO_VOLUMEID")
+	volumemapsdcCmd.Flags().StringVar(&sdcid, "sdcid", "", "GOSCALEIO_SDCID")
+	volumemapsdcCmd.Flags().StringVar(&allowmultiplemappings, "allowmultiplemappings", "", "GOSCALEIO_ALLOWMULTIPLEMAPPINGS")
+	volumemapsdcCmd.Flags().StringVar(&allsdcs, "allsdcs", "", "GOSCALEIO_ALLSDCS")
 
 	volumeCmdV = volumeCmd
 
@@ -40,6 +44,7 @@ func addCommandsVolume() {
 	volumeCmd.AddCommand(volumeuseCmd)
 	volumeCmd.AddCommand(volumelocalCmd)
 	volumeCmd.AddCommand(volumecreateCmd)
+	volumeCmd.AddCommand(volumemapsdcCmd)
 }
 
 var volumeCmd = &cobra.Command{
@@ -79,6 +84,13 @@ var volumecreateCmd = &cobra.Command{
 	Run:   cmdCreateVolume,
 }
 
+var volumemapsdcCmd = &cobra.Command{
+	Use:   "map",
+	Short: "Map volume",
+	Long:  `Map volume`,
+	Run:   cmdMapVolumeSdc,
+}
+
 func cmdGetVolume(cmd *cobra.Command, args []string) {
 	client, err := authenticate()
 	if err != nil {
@@ -103,8 +115,6 @@ func cmdGetVolume(cmd *cobra.Command, args []string) {
 	initConfig(cmd, "goscli_system", true, map[string]FlagValue{
 		"volumeid": {&volumeid, false, false, ""},
 	})
-
-	fmt.Println(volumeid)
 
 	volumes, err := storagePool.GetVolume("", volumeid)
 	if err != nil {
@@ -176,5 +186,42 @@ func cmdCreateVolume(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Println("Successfuly created volume with ID of", volumeResp.ID)
+
+}
+
+func cmdMapVolumeSdc(cmd *cobra.Command, args []string) {
+	client, err := authenticate()
+	if err != nil {
+		log.Fatalf("error authenticating: %v", err)
+	}
+
+	initConfig(cmd, "goscli_system", true, map[string]FlagValue{
+		"volumeid":              {&volumeid, true, false, ""},
+		"sdcid":                 {&sdcid, true, false, ""},
+		"allowmultiplemappings": {&allowmultiplemappings, false, false, ""},
+		"allsdcs":               {&allsdcs, false, false, ""},
+	})
+
+	storagePool := goscaleio.NewStoragePool(client)
+	targetVolumes, err := storagePool.GetVolume("", volumeid)
+	if err != nil {
+		log.Fatalf("error getting volume: %s", err)
+	}
+
+	volume := goscaleio.NewVolume(client)
+	volume.Volume = targetVolumes[0]
+
+	mapVolumeSdcParam := &types.MapVolumeSdcParam{
+		SdcID: sdcid,
+		AllowMultipleMappings: allowmultiplemappings,
+		AllSdcs:               allsdcs,
+	}
+
+	err = volume.MapVolumeSdc(mapVolumeSdcParam)
+	if err != nil {
+		log.Fatalf("err: problem creating volume: %s", err)
+	}
+
+	fmt.Println(fmt.Sprintf("Successfuly mapped volume %s to %s", volume.Volume.ID, sdcid))
 
 }

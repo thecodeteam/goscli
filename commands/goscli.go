@@ -15,29 +15,31 @@ import (
 )
 
 var (
-	username             string
-	password             string
-	endpoint             string
-	insecure             string
-	cfgFile              string
-	systemid             string
-	systemhref           string
-	sdcip                string
-	sdcid                string
-	sdcname              string
-	sdcguid              string
-	protectiondomainname string
-	protectiondomainid   string
-	protectiondomainhref string
-	storagepoolname      string
-	storagepoolid        string
-	storagepoolhref      string
-	volumeid             string
-	volumename           string
-	volumhref            string
-	volumetype           string
-	volumeusermcache     string
-	volumesizeinkb       string
+	username              string
+	password              string
+	endpoint              string
+	insecure              string
+	cfgFile               string
+	systemid              string
+	systemhref            string
+	sdcip                 string
+	sdcid                 string
+	sdcname               string
+	sdcguid               string
+	protectiondomainname  string
+	protectiondomainid    string
+	protectiondomainhref  string
+	storagepoolname       string
+	storagepoolid         string
+	storagepoolhref       string
+	volumeid              string
+	volumename            string
+	volumhref             string
+	volumetype            string
+	volumeusermcache      string
+	volumesizeinkb        string
+	allowmultiplemappings string
+	allsdcs               string
 )
 
 //FlagValue struct

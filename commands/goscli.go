@@ -33,6 +33,7 @@ var (
 	storagepoolid         string
 	storagepoolhref       string
 	volumeid              string
+	ancestorvolumeid      string
 	volumename            string
 	volumhref             string
 	volumetype            string
@@ -42,6 +43,7 @@ var (
 	allsdcs               string
 	ignorescsiinitiators  string
 	snapshotname          string
+	removemode            string
 )
 
 //FlagValue struct

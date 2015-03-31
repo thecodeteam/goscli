@@ -38,6 +38,10 @@ Make sure to preface the commands with ```GOSCALEIO_ENDPOINT=https://ip_or_dns_o
     goscli volume local
     goscli volume create --volumename=testing4 --volumesizeinkb=4096
     goscli volume map --sdcid=988a23eb00000002 --volumeid=d2a3950700000007
+    goscli volume unmap --sdcid=988a23eb00000002 --volumeid=d2a3950700000007
+    goscli volume vtree --volumeid=d2a3950700000007
+    goscli volume get --ancestorvolumeid=d2a3950700000007 
+
 
 
 

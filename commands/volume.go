@@ -143,10 +143,34 @@ func cmdGetVolume(cmd *cobra.Command, args []string) {
 		log.Fatalf("error getting volumes: %v", err)
 	}
 
-	yamlOutput, err := yaml.Marshal(&volumes)
-	if err != nil {
-		log.Fatalf("error marshaling: %s", err)
+	if len(args) == 0 {
+		yamlOutput, err := yaml.Marshal(&volumes)
+		if err != nil {
+			log.Fatalf("error marshaling: %s", err)
+		}
+		fmt.Println(string(yamlOutput))
+		return
 	}
+
+	if len(args) > 1 {
+		log.Fatalf("Too many arguments")
+	}
+
+	volume := goscaleio.NewVolume(client)
+	volume.Volume = volumes[0]
+	var yamlOutput []byte
+	switch args[0] {
+	case "vtree":
+		vtree, err := volume.GetVTree()
+		if err != nil {
+			log.Fatalf("error getting scsiinitiators: %v", err)
+		}
+
+		yamlOutput, err = yaml.Marshal(&vtree)
+	default:
+		log.Fatalf("need to specify vtree as argument")
+	}
+
 	fmt.Println(string(yamlOutput))
 
 }
@@ -315,9 +339,15 @@ func cmdSnapshotVolume(cmd *cobra.Command, args []string) {
 		SnapshotDefs: snapshotDefs,
 	}
 
-	err = system.CreateSnapshot(snapshotVolumesParam)
+	snapshotVolumesResp, err := system.CreateSnapshotConsistencyGroup(snapshotVolumesParam)
 	if err != nil {
 		log.Fatalf("error creating snapshot: %s", err)
 	}
+
+	yamlOutput, err := yaml.Marshal(&snapshotVolumesResp)
+	if err != nil {
+		log.Fatalf("error marshaling: %s", err)
+	}
+	fmt.Println(string(yamlOutput))
 
 }

@@ -15,9 +15,8 @@ For now, reference the [Goair project](https://github.com/emccode/goair) for bas
 
 
 ## <a id="usage">Usage</a>
-Make sure to preface the commands with ```GOSCALEIO_ENDPOINT=https://ip_or_dns_of_gw/api GOSCALEIO_INSECURE=true goscli``` for now.
 
-    goscli login --username=admin --password=Scaleio123
+    goscli login --username=admin --password=Scaleio123 --endpoint=https://ip_or_dns_of_gw/api --insecure=true
     goscli instance get
     goscli system use --systemid=38a6603e69c6b8b1
     goscli system get
@@ -43,7 +42,7 @@ Make sure to preface the commands with ```GOSCALEIO_ENDPOINT=https://ip_or_dns_o
     goscli volume map --sdcid=988a23eb00000002 --volumeid=d2a3950700000007
     goscli volume map local --volumename=testing1
     goscli volume unmap --sdcid=988a23eb00000002 --volumeid=d2a3950700000007
-    goscli volume unmap local --volumename=testing1 
+    goscli volume unmap local --volumename=testing1
     goscli volume remove --volumeid=d2a3950700000007
     goscli volume remove --ancestorvolumeid=d2a3950700000028
     goscli volume remove-snapshot --volumeid=d2a3950700000028

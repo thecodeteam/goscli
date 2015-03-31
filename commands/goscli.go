@@ -127,6 +127,7 @@ func init() {
 	loginCmd.Flags().StringVar(&username, "username", "", "GOSCALEIO_USERNAME")
 	loginCmd.Flags().StringVar(&password, "password", "", "GOSCALEIO_PASSWORD")
 	loginCmd.Flags().StringVar(&endpoint, "endpoint", "", "GOSCALEIO_ENDPOINT")
+	loginCmd.Flags().StringVar(&insecure, "insecure", "", "GOSCALEIO_INSECURE")
 	goscliCmdV = GoscliCmd
 
 	initConfig(systemCmd, "goscli", true, map[string]FlagValue{

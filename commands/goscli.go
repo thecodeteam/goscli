@@ -67,7 +67,7 @@ var GoscliCmd = &cobra.Command{
 var versionCmd = &cobra.Command{
 	Use: "version",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("\nGoscli Version: %v\n", "0.1.150306")
+		fmt.Printf("\nGoscli Version: %v\n", "0.1.150331")
 	},
 }
 

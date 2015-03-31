@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/emccode/goscaleio"
 	types "github.com/emccode/goscaleio/types/v1"
@@ -20,6 +21,7 @@ func init() {
 	volumegetCmd.Flags().StringVar(&systemid, "systemid", "", "GOSCALEIO_SYSTEMID")
 	volumegetCmd.Flags().StringVar(&volumeid, "volumeid", "", "GOSCALEIO_VOLUMEID")
 	volumegetCmd.Flags().StringVar(&ancestorvolumeid, "ancestorvolumeid", "", "GOSCALEIO_ANCESTORVOLUMEID")
+	volumegetCmd.Flags().StringVar(&volumename, "volumename", "", "GOSCALEIO_VOLUMENAME")
 	volumeuseCmd.Flags().StringVar(&volumename, "volumename", "", "GOSCALEIO_VOLUMENAME")
 	volumeuseCmd.Flags().StringVar(&volumeid, "volumeid", "", "GOSCALEIO_VOLUMEID")
 	volumecreateCmd.Flags().StringVar(&volumename, "volumename", "", "GOSCALEIO_VOLUMENAME")
@@ -28,19 +30,26 @@ func init() {
 	volumecreateCmd.Flags().StringVar(&volumetype, "volumetype", "", "GOSCALEIO_VOLUMETYPE")
 	volumecreateCmd.Flags().StringVar(&volumesizeinkb, "volumesizeinkb", "", "GOSCALEIO_VOLUMESIZEINKB")
 	volumemapsdcCmd.Flags().StringVar(&volumeid, "volumeid", "", "GOSCALEIO_VOLUMEID")
+	volumemapsdcCmd.Flags().StringVar(&volumename, "volumename", "", "GOSCALEIO_VOLUMENAME")
 	volumemapsdcCmd.Flags().StringVar(&sdcid, "sdcid", "", "GOSCALEIO_SDCID")
+	volumemapsdcCmd.Flags().StringVar(&sdcguid, "sdcguid", "", "GOSCALEIO_SDCGUID")
 	volumemapsdcCmd.Flags().StringVar(&allowmultiplemappings, "allowmultiplemappings", "", "GOSCALEIO_ALLOWMULTIPLEMAPPINGS")
 	volumemapsdcCmd.Flags().StringVar(&allsdcs, "allsdcs", "", "GOSCALEIO_ALLSDCS")
 	volumeunmapsdcCmd.Flags().StringVar(&volumeid, "volumeid", "", "GOSCALEIO_VOLUMEID")
+	volumeunmapsdcCmd.Flags().StringVar(&volumename, "volumename", "", "GOSCALEIO_VOLUMENAME")
 	volumeunmapsdcCmd.Flags().StringVar(&sdcid, "sdcid", "", "GOSCALEIO_SDCID")
 	volumeunmapsdcCmd.Flags().StringVar(&ignorescsiinitiators, "ignoreScsiInitiators", "", "GOSCALEIO_IGNORESCSIINITIATORS")
 	volumeunmapsdcCmd.Flags().StringVar(&allsdcs, "allsdcs", "", "GOSCALEIO_ALLSDCS")
+	volumeunmapsdcCmd.Flags().StringVar(&sdcguid, "sdcguid", "", "GOSCALEIO_SDCGUID")
 	volumesnapshotCmd.Flags().StringVar(&volumeid, "volumeid", "", "GOSCALEIO_VOLUMEID")
+	volumesnapshotCmd.Flags().StringVar(&volumename, "volumename", "", "GOSCALEIO_VOLUMENAME")
 	volumesnapshotCmd.Flags().StringVar(&snapshotname, "snapshotname", "", "GOSCALEIO_SNAPSHOTNAME")
 	volumeremoveCmd.Flags().StringVar(&volumeid, "volumeid", "", "GOSCALEIO_VOLUMEID")
+	volumeremoveCmd.Flags().StringVar(&volumename, "volumename", "", "GOSCALEIO_VOLUMENAME")
 	volumeremoveCmd.Flags().StringVar(&ancestorvolumeid, "ancestorvolumeid", "", "GOSCALEIO_ANCESTORVOLUMEID")
 	volumeremoveCmd.Flags().StringVar(&removemode, "removemode", "", "GOSCALEIO_REMOVEMODE")
 	volumesnapshotremoveCmd.Flags().StringVar(&volumeid, "volumeid", "", "GOSCALEIO_VOLUMEID")
+	volumesnapshotremoveCmd.Flags().StringVar(&volumename, "volumename", "", "GOSCALEIO_VOLUMENAME")
 	volumesnapshotremoveCmd.Flags().StringVar(&removemode, "removemode", "", "GOSCALEIO_REMOVEMODE")
 
 	volumeCmdV = volumeCmd
@@ -159,10 +168,11 @@ func cmdGetVolume(cmd *cobra.Command, args []string) {
 	initConfig(cmd, "goscli_system", true, map[string]FlagValue{
 		"volumeid":         {&volumeid, false, false, ""},
 		"ancestorvolumeid": {&ancestorvolumeid, false, false, ""},
+		"volumename":       {&volumename, false, false, ""},
 	})
 
 	if len(args) == 0 {
-		volumes, err := storagePool.GetVolume("", volumeid, ancestorvolumeid)
+		volumes, err := storagePool.GetVolume("", volumeid, ancestorvolumeid, volumename)
 		if err != nil {
 			log.Fatalf("error getting volumes: %v", err)
 		}
@@ -182,7 +192,7 @@ func cmdGetVolume(cmd *cobra.Command, args []string) {
 	var yamlOutput []byte
 	switch args[0] {
 	case "vtree":
-		volumes, err := storagePool.GetVolume("", volumeid, "")
+		volumes, err := storagePool.GetVolume("", volumeid, "", volumename)
 		if err != nil {
 			log.Fatalf("error getting volumes: %v", err)
 		}
@@ -197,7 +207,18 @@ func cmdGetVolume(cmd *cobra.Command, args []string) {
 
 		yamlOutput, err = yaml.Marshal(&vtree)
 	case "snapshot":
-		volumes, err := storagePool.GetVolume("", "", volumeid)
+		if ancestorvolumeid != "" {
+			log.Fatalf("can't specify ancestorvolumeid with snapshot")
+		}
+
+		if volumename != "" {
+			volumeid, err = storagePool.FindVolumeID(volumename)
+			if err != nil {
+				log.Fatalf("error finding volume id: %s", err)
+			}
+		}
+
+		volumes, err := storagePool.GetVolume("", "", volumeid, "")
 		if err != nil {
 			log.Fatalf("error getting volumes: %v", err)
 		}
@@ -277,21 +298,63 @@ func cmdMapVolumeSdc(cmd *cobra.Command, args []string) {
 		log.Fatalf("error authenticating: %v", err)
 	}
 
+	initConfig(cmd, "goscli", true, map[string]FlagValue{
+		"systemhref": {&systemhref, true, false, ""},
+	})
+
+	systemhref = viper.GetString("systemhref")
+
 	initConfig(cmd, "goscli_system", true, map[string]FlagValue{
-		"volumeid":              {&volumeid, true, false, ""},
-		"sdcid":                 {&sdcid, true, false, ""},
+		"volumeid":              {&volumeid, false, false, ""},
+		"volumename":            {&volumename, false, false, "volumeid"},
+		"sdcid":                 {&sdcid, false, false, ""},
+		"sdcguid":               {&sdcguid, false, false, ""},
 		"allowmultiplemappings": {&allowmultiplemappings, false, false, ""},
 		"allsdcs":               {&allsdcs, false, false, ""},
 	})
 
+	if volumeid == "" && volumename == "" {
+		log.Fatalf("need to specify --volumeid or --volumename")
+	}
+
 	storagePool := goscaleio.NewStoragePool(client)
-	targetVolumes, err := storagePool.GetVolume("", volumeid, "")
+	targetVolumes, err := storagePool.GetVolume("", volumeid, "", volumename)
 	if err != nil {
 		log.Fatalf("error getting volume: %s", err)
 	}
 
 	volume := goscaleio.NewVolume(client)
 	volume.Volume = targetVolumes[0]
+
+	if len(args) > 1 {
+		log.Fatalf("too many arguments specified")
+	}
+
+	if len(args) == 1 && args[0] == "local" {
+		sdcguid, err = goscaleio.GetSdcLocalGUID()
+		if err != nil {
+			log.Fatalf("Error getting local sdc guid: %s", err)
+		}
+
+		systemhref = viper.GetString("systemhref")
+
+		system, err := client.FindSystem("", systemhref)
+		if err != nil {
+			log.Fatalf("err: problem getting system: %v", err)
+		}
+
+		sdc, err := system.FindSdc("SdcGuid", strings.ToUpper(sdcguid))
+		if err != nil {
+			log.Fatalf("Error finding Sdc %s: %s", sdcguid, err)
+		}
+
+		sdcid = sdc.Sdc.ID
+
+	} else if len(args) == 1 && args[0] != "" {
+		log.Fatalf("argument needs to be local")
+	} else if sdcid == "" {
+		log.Fatalf("missing --sdcid or local")
+	}
 
 	mapVolumeSdcParam := &types.MapVolumeSdcParam{
 		SdcID: sdcid,
@@ -314,21 +377,63 @@ func cmdUnmapVolumeSdc(cmd *cobra.Command, args []string) {
 		log.Fatalf("error authenticating: %v", err)
 	}
 
+	initConfig(cmd, "goscli", true, map[string]FlagValue{
+		"systemhref": {&systemhref, true, false, ""},
+	})
+
+	systemhref = viper.GetString("systemhref")
+
 	initConfig(cmd, "goscli_system", true, map[string]FlagValue{
-		"volumeid":             {&volumeid, true, false, ""},
-		"sdcid":                {&sdcid, true, false, ""},
+		"volumeid":             {&volumeid, false, false, ""},
+		"volumename":           {&volumename, false, false, "volumeid"},
+		"sdcid":                {&sdcid, false, false, ""},
+		"sdcguid":              {&sdcguid, false, false, ""},
 		"ignoreScsiInitiators": {&ignorescsiinitiators, false, false, ""},
 		"allsdcs":              {&allsdcs, false, false, ""},
 	})
 
+	if volumeid == "" && volumename == "" {
+		log.Fatalf("need to specify --volumeid or --volumename")
+	}
+
 	storagePool := goscaleio.NewStoragePool(client)
-	targetVolumes, err := storagePool.GetVolume("", volumeid, "")
+	targetVolumes, err := storagePool.GetVolume("", volumeid, "", volumename)
 	if err != nil {
 		log.Fatalf("error getting volume: %s", err)
 	}
 
 	volume := goscaleio.NewVolume(client)
 	volume.Volume = targetVolumes[0]
+
+	if len(args) > 1 {
+		log.Fatalf("too many arguments specified")
+	}
+
+	if len(args) == 1 && args[0] == "local" {
+		sdcguid, err = goscaleio.GetSdcLocalGUID()
+		if err != nil {
+			log.Fatalf("Error getting local sdc guid: %s", err)
+		}
+
+		systemhref = viper.GetString("systemhref")
+
+		system, err := client.FindSystem("", systemhref)
+		if err != nil {
+			log.Fatalf("err: problem getting system: %v", err)
+		}
+
+		sdc, err := system.FindSdc("SdcGuid", strings.ToUpper(sdcguid))
+		if err != nil {
+			log.Fatalf("Error finding Sdc %s: %s", sdcguid, err)
+		}
+
+		sdcid = sdc.Sdc.ID
+
+	} else if len(args) == 1 && args[0] != "" {
+		log.Fatalf("argument needs to be local")
+	} else if sdcid == "" {
+		log.Fatalf("missing --sdcid or local")
+	}
 
 	unmapVolumeSdcParam := &types.UnmapVolumeSdcParam{
 		SdcID:                sdcid,
@@ -354,12 +459,13 @@ func cmdRemoveVolume(cmd *cobra.Command, args []string) {
 	initConfig(cmd, "goscli_system", true, map[string]FlagValue{
 		"storagepoolhref":  {&storagepoolhref, false, false, ""},
 		"volumeid":         {&volumeid, false, false, ""},
-		"ancestorvolumeid": {&ancestorvolumeid, false, false, ""},
+		"volumename":       {&volumename, false, false, "volumeid"},
+		"ancestorvolumeid": {&ancestorvolumeid, false, false, "volumeid"},
 		"removemode":       {&removemode, false, false, ""},
 	})
 
-	if volumeid == "" && ancestorvolumeid == "" {
-		log.Fatalf("need either --volumeid or --ancestorvolumeid specified")
+	if volumeid == "" && ancestorvolumeid == "" && volumename == "" {
+		log.Fatalf("need either --volumeid or --volumename or --ancestorvolumeid specified")
 	}
 
 	targetStoragePool := goscaleio.NewStoragePool(client)
@@ -375,7 +481,7 @@ func cmdRemoveVolume(cmd *cobra.Command, args []string) {
 		targetStoragePool.StoragePool = storagePool
 	}
 
-	volumes, err := targetStoragePool.GetVolume("", volumeid, ancestorvolumeid)
+	volumes, err := targetStoragePool.GetVolume("", volumeid, ancestorvolumeid, volumename)
 	if err != nil {
 		log.Fatalf("error getting volumes: %v", err)
 	}
@@ -400,9 +506,14 @@ func cmdSnapshotVolume(cmd *cobra.Command, args []string) {
 
 	initConfig(cmd, "goscli", true, map[string]FlagValue{
 		"systemhref":   {&systemhref, true, false, ""},
-		"volumeid":     {&volumeid, true, false, ""},
+		"volumeid":     {&volumeid, false, false, ""},
+		"volumename":   {&volumename, false, false, "volumeid"},
 		"snapshotname": {&snapshotname, false, false, ""},
 	})
+
+	if volumeid == "" && volumename == "" {
+		log.Fatalf("need to specify --volumeid or --volumename")
+	}
 
 	systemhref = viper.GetString("systemhref")
 
@@ -442,9 +553,14 @@ func cmdRemoveVolumeSnapshot(cmd *cobra.Command, args []string) {
 
 	initConfig(cmd, "goscli_system", true, map[string]FlagValue{
 		"storagepoolhref": {&storagepoolhref, false, false, ""},
-		"volumeid":        {&volumeid, true, false, ""},
+		"volumeid":        {&volumeid, false, false, ""},
+		"volumename":      {&volumename, false, false, "volumeid"},
 		"removemode":      {&removemode, false, false, ""},
 	})
+
+	if volumeid == "" && volumename == "" {
+		log.Fatalf("need to specify --volumeid or --volumename")
+	}
 
 	targetStoragePool := goscaleio.NewStoragePool(client)
 	storagepoolhref = viper.GetString("storagepoolhref")
@@ -457,7 +573,18 @@ func cmdRemoveVolumeSnapshot(cmd *cobra.Command, args []string) {
 
 	targetStoragePool.StoragePool = storagePool
 
-	volumes, err := targetStoragePool.GetVolume("", "", volumeid)
+	if volumename != "" {
+		volumes, err := targetStoragePool.GetVolume("", "", "", volumename)
+		if err != nil {
+			log.Fatalf("error getting volumes: %v", err)
+		}
+		volumeid = volumes[0].ID
+		if len(volumes) > 1 {
+			log.Fatalf("error since got more than one volume")
+		}
+	}
+
+	volumes, err := targetStoragePool.GetVolume("", "", volumeid, "")
 	if err != nil {
 		log.Fatalf("error getting volumes: %v", err)
 	}

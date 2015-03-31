@@ -40,6 +40,8 @@ func init() {
 	volumeremoveCmd.Flags().StringVar(&volumeid, "volumeid", "", "GOSCALEIO_VOLUMEID")
 	volumeremoveCmd.Flags().StringVar(&ancestorvolumeid, "ancestorvolumeid", "", "GOSCALEIO_ANCESTORVOLUMEID")
 	volumeremoveCmd.Flags().StringVar(&removemode, "removemode", "", "GOSCALEIO_REMOVEMODE")
+	volumesnapshotremoveCmd.Flags().StringVar(&volumeid, "volumeid", "", "GOSCALEIO_VOLUMEID")
+	volumesnapshotremoveCmd.Flags().StringVar(&removemode, "removemode", "", "GOSCALEIO_REMOVEMODE")
 
 	volumeCmdV = volumeCmd
 
@@ -58,6 +60,7 @@ func addCommandsVolume() {
 	volumeCmd.AddCommand(volumeunmapsdcCmd)
 	volumeCmd.AddCommand(volumesnapshotCmd)
 	volumeCmd.AddCommand(volumeremoveCmd)
+	volumeCmd.AddCommand(volumesnapshotremoveCmd)
 }
 
 var volumeCmd = &cobra.Command{
@@ -123,6 +126,13 @@ var volumeremoveCmd = &cobra.Command{
 	Short: "Remove volume",
 	Long:  `Remove volume`,
 	Run:   cmdRemoveVolume,
+}
+
+var volumesnapshotremoveCmd = &cobra.Command{
+	Use:   "remove-snapshot",
+	Short: "Remove snapshot volume",
+	Long:  `Remove snapshot volume`,
+	Run:   cmdRemoveVolumeSnapshot,
 }
 
 func cmdGetVolume(cmd *cobra.Command, args []string) {
@@ -422,4 +432,44 @@ func cmdSnapshotVolume(cmd *cobra.Command, args []string) {
 		log.Fatalf("error marshaling: %s", err)
 	}
 	fmt.Println(string(yamlOutput))
+}
+
+func cmdRemoveVolumeSnapshot(cmd *cobra.Command, args []string) {
+	client, err := authenticate()
+	if err != nil {
+		log.Fatalf("error authenticating: %v", err)
+	}
+
+	initConfig(cmd, "goscli_system", true, map[string]FlagValue{
+		"storagepoolhref": {&storagepoolhref, false, false, ""},
+		"volumeid":        {&volumeid, true, false, ""},
+		"removemode":      {&removemode, false, false, ""},
+	})
+
+	targetStoragePool := goscaleio.NewStoragePool(client)
+	storagepoolhref = viper.GetString("storagepoolhref")
+
+	protectionDomain := goscaleio.NewProtectionDomain(client)
+	storagePool, err := protectionDomain.FindStoragePool("", "", storagepoolhref)
+	if err != nil {
+		log.Fatalf("err: problem getting storage pool %v", err)
+	}
+
+	targetStoragePool.StoragePool = storagePool
+
+	volumes, err := targetStoragePool.GetVolume("", "", volumeid)
+	if err != nil {
+		log.Fatalf("error getting volumes: %v", err)
+	}
+
+	for _, volume := range volumes {
+		newVolume := goscaleio.NewVolume(client)
+		newVolume.Volume = volume
+		err = newVolume.RemoveVolume(removemode)
+		if err != nil {
+			log.Fatalf("error getting volume: %s", err)
+		}
+
+		fmt.Println(fmt.Sprintf("Successfuly removed snapshot %s", newVolume.Volume.ID))
+	}
 }

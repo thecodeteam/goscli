@@ -40,9 +40,10 @@ Make sure to preface the commands with ```GOSCALEIO_ENDPOINT=https://ip_or_dns_o
     goscli volume map --sdcid=988a23eb00000002 --volumeid=d2a3950700000007
     goscli volume unmap --sdcid=988a23eb00000002 --volumeid=d2a3950700000007
     goscli volume vtree --volumeid=d2a3950700000007
-    goscli volume get --ancestorvolumeid=d2a3950700000007 
-
-
+    goscli volume get --ancestorvolumeid=d2a3950700000007
+    goscli volume remove --volumeid=d2a3950700000007
+    goscli volume remove --ancestorvolumeid=d2a3950700000028
+    goscli volume remove-snapshot --volumeid=d2a3950700000028
 
 
 <a id="licensing">Licensing</a>

@@ -522,6 +522,15 @@ func cmdSnapshotVolume(cmd *cobra.Command, args []string) {
 		log.Fatalf("err: problem getting system: %v", err)
 	}
 
+	storagePool := goscaleio.NewStoragePool(client)
+
+	if volumename != "" {
+		volumeid, err = storagePool.FindVolumeID(volumename)
+		if err != nil {
+			log.Fatalf("error finding volume id: %s", err)
+		}
+	}
+
 	snapshotDef := &types.SnapshotDef{
 		VolumeID:     volumeid,
 		SnapshotName: snapshotname,
@@ -574,13 +583,9 @@ func cmdRemoveVolumeSnapshot(cmd *cobra.Command, args []string) {
 	targetStoragePool.StoragePool = storagePool
 
 	if volumename != "" {
-		volumes, err := targetStoragePool.GetVolume("", "", "", volumename)
+		volumeid, err = targetStoragePool.FindVolumeID(volumename)
 		if err != nil {
-			log.Fatalf("error getting volumes: %v", err)
-		}
-		volumeid = volumes[0].ID
-		if len(volumes) > 1 {
-			log.Fatalf("error since got more than one volume")
+			log.Fatalf("error finding volume id: %s", err)
 		}
 	}
 

@@ -1,8 +1,7 @@
-FROM scratch
+FROM ubuntu
 
-ADD ./release/goscli-Linux-static /bin/goscli
+ADD ./release/goscli-Linux-x86_64 /bin/goscli
 
-ENV GOSCALEIO_USECERTS true
+RUN apt-get install -y ca-certificates
 
-ENTRYPOINT ["/bin/goscli"]
-CMD ["--help"]
+ENTRYPOINT ["/bin/bash"]

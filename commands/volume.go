@@ -34,6 +34,8 @@ func init() {
 	volumeunmapsdcCmd.Flags().StringVar(&sdcid, "sdcid", "", "GOSCALEIO_SDCID")
 	volumeunmapsdcCmd.Flags().StringVar(&ignorescsiinitiators, "ignoreScsiInitiators", "", "GOSCALEIO_IGNORESCSIINITIATORS")
 	volumeunmapsdcCmd.Flags().StringVar(&allsdcs, "allsdcs", "", "GOSCALEIO_ALLSDCS")
+	volumesnapshotCmd.Flags().StringVar(&volumeid, "volumeid", "", "GOSCALEIO_VOLUMEID")
+	volumesnapshotCmd.Flags().StringVar(&snapshotname, "snapshotname", "", "GOSCALEIO_SNAPSHOTNAME")
 
 	volumeCmdV = volumeCmd
 
@@ -50,6 +52,7 @@ func addCommandsVolume() {
 	volumeCmd.AddCommand(volumecreateCmd)
 	volumeCmd.AddCommand(volumemapsdcCmd)
 	volumeCmd.AddCommand(volumeunmapsdcCmd)
+	volumeCmd.AddCommand(volumesnapshotCmd)
 }
 
 var volumeCmd = &cobra.Command{
@@ -101,6 +104,13 @@ var volumeunmapsdcCmd = &cobra.Command{
 	Short: "Unmap volume",
 	Long:  `Unmap volume`,
 	Run:   cmdUnmapVolumeSdc,
+}
+
+var volumesnapshotCmd = &cobra.Command{
+	Use:   "snapshot",
+	Short: "Snapshot volume",
+	Long:  `Snapshot volume`,
+	Run:   cmdSnapshotVolume,
 }
 
 func cmdGetVolume(cmd *cobra.Command, args []string) {
@@ -272,5 +282,42 @@ func cmdUnmapVolumeSdc(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Println(fmt.Sprintf("Successfuly unmapped volume %s to %s", volume.Volume.ID, sdcid))
+
+}
+
+func cmdSnapshotVolume(cmd *cobra.Command, args []string) {
+	client, err := authenticate()
+	if err != nil {
+		log.Fatalf("error authenticating: %v", err)
+	}
+
+	initConfig(cmd, "goscli", true, map[string]FlagValue{
+		"systemhref":   {&systemhref, true, false, ""},
+		"volumeid":     {&volumeid, true, false, ""},
+		"snapshotname": {&snapshotname, false, false, ""},
+	})
+
+	systemhref = viper.GetString("systemhref")
+
+	system, err := client.FindSystem("", systemhref)
+	if err != nil {
+		log.Fatalf("err: problem getting system: %v", err)
+	}
+
+	snapshotDef := &types.SnapshotDef{
+		VolumeID:     volumeid,
+		SnapshotName: snapshotname,
+	}
+
+	var snapshotDefs []*types.SnapshotDef
+	snapshotDefs = append(snapshotDefs, snapshotDef)
+	snapshotVolumesParam := &types.SnapshotVolumesParam{
+		SnapshotDefs: snapshotDefs,
+	}
+
+	err = system.CreateSnapshot(snapshotVolumesParam)
+	if err != nil {
+		log.Fatalf("error creating snapshot: %s", err)
+	}
 
 }

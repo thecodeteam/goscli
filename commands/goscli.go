@@ -41,6 +41,7 @@ var (
 	allowmultiplemappings string
 	allsdcs               string
 	ignorescsiinitiators  string
+	snapshotname          string
 )
 
 //FlagValue struct

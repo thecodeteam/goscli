@@ -111,25 +111,38 @@ func cmdGetSdc(cmd *cobra.Command, args []string) {
 		log.Fatalf("error finding Sdc: %v", err)
 	}
 
-	if len(args) == 0 {
-		yamlOutput, err := yaml.Marshal(&sdc)
-		if err != nil {
-			log.Fatalf("error marshaling: %s", err)
-		}
-		fmt.Println(string(yamlOutput))
-		return
-	}
-
 	if len(args) > 1 {
 		log.Fatalf("Too many arguments specified")
 	}
 
-	switch {
-	case args[0] == "statistics":
-		sdc.GetStatistics()
-	case args[0] == "volume":
+	var yamlOutput []byte
+	if len(args) == 1 {
+		switch args[0] {
+		case "statistics":
+			statistics, err := sdc.GetStatistics()
+			if err != nil {
+				log.Fatalf("error getting statistics: %v", err)
+			}
 
+			yamlOutput, err = yaml.Marshal(&statistics)
+		case "volume":
+			volumes, err := sdc.GetVolume()
+			if err != nil {
+				log.Fatalf("error getting statistics: %v", err)
+			}
+
+			yamlOutput, err = yaml.Marshal(&volumes)
+		default:
+			log.Fatalf("parameter didn't match statistics|volume")
+		}
+	} else {
+		yamlOutput, err = yaml.Marshal(&sdc)
+		if err != nil {
+			log.Fatalf("error marshaling: %s", err)
+		}
 	}
+	fmt.Println(string(yamlOutput))
+	return
 
 }
 
@@ -161,9 +174,37 @@ func cmdGetSdcLocal(cmd *cobra.Command, args []string) {
 		log.Fatalf("Error finding Sdc %s: %s", sdcguid, err)
 	}
 
-	yamlOutput, err := yaml.Marshal(&sdc)
-	if err != nil {
-		log.Fatalf("error marshaling: %s", err)
+	if len(args) > 1 {
+		log.Fatalf("Too many arguments specified")
+	}
+
+	var yamlOutput []byte
+	if len(args) == 1 {
+		switch args[0] {
+		case "statistics":
+			statistics, err := sdc.GetStatistics()
+			if err != nil {
+				log.Fatalf("error getting statistics: %v", err)
+			}
+
+			yamlOutput, err = yaml.Marshal(&statistics)
+		case "volume":
+			volumes, err := sdc.GetVolume()
+			if err != nil {
+				log.Fatalf("error getting statistics: %v", err)
+			}
+
+			yamlOutput, err = yaml.Marshal(&volumes)
+		default:
+			log.Fatalf("parameter didn't match statistics|volume")
+		}
+	} else {
+		yamlOutput, err = yaml.Marshal(&sdc)
+		if err != nil {
+			log.Fatalf("error marshaling: %s", err)
+		}
 	}
 	fmt.Println(string(yamlOutput))
+	return
+
 }
